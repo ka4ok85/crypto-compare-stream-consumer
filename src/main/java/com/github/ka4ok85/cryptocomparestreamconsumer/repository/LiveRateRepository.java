@@ -12,4 +12,7 @@ import reactor.core.publisher.Flux;
 public interface LiveRateRepository extends ReactiveMongoRepository<LiveRate, ObjectId> {
 
 	public Flux<LiveRate> findByExchangeName(final String firstName);
+
+	public Flux<LiveRate> findByLastUpdate(final long lastUpdate);
+
 }
