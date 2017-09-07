@@ -2,7 +2,7 @@ package com.github.ka4ok85.cryptocomparestreamconsumer.entity;
 
 import org.springframework.data.mongodb.core.mapping.Document;
 
-@Document(collection = "live_rates")
+@Document(collection = "live_rates3")
 public class LiveRate {
 
 	private String exchangeName;
@@ -11,15 +11,11 @@ public class LiveRate {
 	private byte flag;
 	private double price;
 	private long lastUpdate;
-	private double lastVolume;
-	private double lastVolumeTo;
-	private long lastTradeId;
 	private double volume24h;
 	private double volume24hTo;
 
 	public LiveRate(String exchangeName, String fromCurrency, String toCurrency, byte flag, double price,
-			long lastUpdate, double lastVolume, double lastVolumeTo, long lastTradeId, double volume24h,
-			double volume24hTo) {
+			long lastUpdate, double volume24h, double volume24hTo) {
 		super();
 		this.exchangeName = exchangeName;
 		this.fromCurrency = fromCurrency;
@@ -27,13 +23,19 @@ public class LiveRate {
 		this.flag = flag;
 		this.price = price;
 		this.lastUpdate = lastUpdate;
-		this.lastVolume = lastVolume;
-		this.lastVolumeTo = lastVolumeTo;
-		this.lastTradeId = lastTradeId;
 		this.volume24h = volume24h;
 		this.volume24hTo = volume24hTo;
 	}
 
+	public LiveRate() {
+		super();
+	}
+
+	public LiveRate(double price) {
+		super();
+		this.price = price;
+	}
+	
 	public String getExchangeName() {
 		return exchangeName;
 	}
@@ -82,30 +84,6 @@ public class LiveRate {
 		this.lastUpdate = lastUpdate;
 	}
 
-	public double getLastVolume() {
-		return lastVolume;
-	}
-
-	public void setLastVolume(double lastVolume) {
-		this.lastVolume = lastVolume;
-	}
-
-	public double getLastVolumeTo() {
-		return lastVolumeTo;
-	}
-
-	public void setLastVolumeTo(double lastVolumeTo) {
-		this.lastVolumeTo = lastVolumeTo;
-	}
-
-	public long getLastTradeId() {
-		return lastTradeId;
-	}
-
-	public void setLastTradeId(long lastTradeId) {
-		this.lastTradeId = lastTradeId;
-	}
-
 	public double getVolume24h() {
 		return volume24h;
 	}
@@ -125,9 +103,11 @@ public class LiveRate {
 	@Override
 	public String toString() {
 		return "LiveRate [exchangeName=" + exchangeName + ", fromCurrency=" + fromCurrency + ", toCurrency="
-				+ toCurrency + ", flag=" + flag + ", price=" + price + ", lastUpdate=" + lastUpdate + ", lastVolume="
-				+ lastVolume + ", lastVolumeTo=" + lastVolumeTo + ", lastTradeId=" + lastTradeId + ", volume24h="
+				+ toCurrency + ", flag=" + flag + ", price=" + price + ", lastUpdate=" + lastUpdate + ", volume24h="
 				+ volume24h + ", volume24hTo=" + volume24hTo + "]";
 	}
 
+
+	
+	
 }
