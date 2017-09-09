@@ -1,12 +1,6 @@
 package com.github.ka4ok85.cryptocomparestreamconsumer;
 
 import java.net.URISyntaxException;
-import java.time.Duration;
-import java.util.Arrays;
-import java.util.List;
-import java.util.function.Consumer;
-import java.util.function.Predicate;
-import java.util.stream.Stream;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -15,13 +9,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.http.codec.ServerSentEvent;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.thymeleaf.spring5.context.webflux.ReactiveDataDriverContextVariable;
-
 
 import com.github.ka4ok85.cryptocomparestreamconsumer.entity.LiveRate;
 import com.github.ka4ok85.cryptocomparestreamconsumer.repository.LiveRateRepository;
@@ -30,12 +19,7 @@ import com.github.ka4ok85.cryptocomparestreamconsumer.service.CryptocompareUtils
 import io.socket.client.IO;
 import io.socket.client.Socket;
 import io.socket.emitter.Emitter;
-import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-import reactor.core.publisher.Signal;
-import reactor.core.scheduler.Scheduler;
-import reactor.util.function.Tuple2;
 
 @RestController
 public class WebSocketController {
@@ -44,6 +28,10 @@ public class WebSocketController {
 	@Autowired
 	private LiveRateRepository liveRateRepository;
 
+	/*
+	 * this endpoint triggers consuming process rates through websocket valid
+	 * rates stored in MongoDB
+	 */
 	@GetMapping("/websocket")
 	public void websocket() throws URISyntaxException, JSONException {
 		Socket socket = IO.socket("https://streamer.cryptocompare.com/");
@@ -71,7 +59,8 @@ public class WebSocketController {
 				String mask;
 				String[] items = message.split(CryptocompareUtils.separator);
 
-				if (items[0].equals(CryptocompareUtils.acceptedType) && !items[4].equals(CryptocompareUtils.unacceptedFlag)) {
+				if (items[0].equals(CryptocompareUtils.acceptedType)
+						&& !items[4].equals(CryptocompareUtils.unacceptedFlag)) {
 					mask = CryptocompareUtils.hexStringToBinaryString(items[items.length - 1]);
 					if (CryptocompareUtils.validateMask(mask)) {
 						System.out.println(mask);
@@ -87,8 +76,11 @@ public class WebSocketController {
 		socket.connect();
 	}
 
-	@GetMapping(value = "/s9", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-	public Flux<LiveRate> s2() {
+	/*
+	 * this endpoint provides live stream reading rates from MongoDB
+	 */
+	@GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+	public Flux<LiveRate> liveStream() {
 		return liveRateRepository.findByFromCurrency("BTC").log().share();
 	}
 
