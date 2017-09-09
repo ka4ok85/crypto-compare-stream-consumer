@@ -11,5 +11,5 @@ import reactor.core.publisher.Flux;
 public interface LiveRateRepository extends ReactiveMongoRepository<LiveRate, ObjectId> {
 
 	@Tailable
-	public Flux<LiveRate> findByLastUpdate(long lastUpdate);
+	public Flux<LiveRate> findByFromCurrency(String fromCurrency);
 }
