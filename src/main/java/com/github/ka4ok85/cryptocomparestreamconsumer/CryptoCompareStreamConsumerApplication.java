@@ -5,7 +5,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.data.mongodb.repository.config.EnableReactiveMongoRepositories;
 
 @SpringBootApplication
-@EnableReactiveMongoRepositories
+@EnableReactiveMongoRepositories(considerNestedRepositories = true)
 public class CryptoCompareStreamConsumerApplication {
 
 	public static void main(String[] args) {
