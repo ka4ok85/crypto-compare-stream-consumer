@@ -12,7 +12,14 @@ public interface LiveRateReactiveRepository extends ReactiveMongoRepository<Live
 
 	@Tailable
 	public Flux<LiveRate> findByFromCurrencyAndToCurrency(String fromCurrency, String toCurrency);
-	
+
 	@Tailable
-	public Flux<LiveRate> findByFromCurrencyAndToCurrencyAndLastUpdateGreaterThan(String fromCurrency, String toCurrency, long lastUpdate);
+	public Flux<LiveRate> findByFromCurrencyAndToCurrencyAndLastUpdateGreaterThan(String fromCurrency,
+			String toCurrency, long lastUpdate);
+
+	public Flux<LiveRate> findFirst5ByFromCurrencyAndToCurrency(String fromCurrency, String toCurrency);
+
+	public Flux<LiveRate> findLast5ByFromCurrencyAndToCurrency(String fromCurrency, String toCurrency);
+
+	public Flux<LiveRate> findWhateverByFromCurrencyAndToCurrency(String fromCurrency, String toCurrency);
 }
