@@ -1,6 +1,8 @@
 package com.github.ka4ok85.cryptocomparestreamconsumer;
 
 import java.net.URISyntaxException;
+import java.time.Instant;
+import java.util.List;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -8,12 +10,18 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Direction;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.github.ka4ok85.cryptocomparestreamconsumer.entity.LiveRate;
-import com.github.ka4ok85.cryptocomparestreamconsumer.repository.LiveRateRepository;
+import com.github.ka4ok85.cryptocomparestreamconsumer.repository.LiveRateReactiveRepository;
 import com.github.ka4ok85.cryptocomparestreamconsumer.service.CryptocompareUtils;
 
 import io.socket.client.IO;
@@ -25,9 +33,10 @@ import reactor.core.publisher.Flux;
 public class WebSocketController {
 
 	private static final Logger log = LoggerFactory.getLogger(WebSocketController.class);
+	
 	@Autowired
-	private LiveRateRepository liveRateRepository;
-
+	private LiveRateReactiveRepository liveRateReactiveRepository;
+	
 	/*
 	 * this endpoint triggers consuming process rates through websocket valid
 	 * rates stored in MongoDB
@@ -43,6 +52,7 @@ public class WebSocketController {
 				// jarr.put("5~CCCAGG~ETH~USD"); // aggregate
 				// jarr.put("2~Poloniex~BTC~USD"); // single Poloniex
 				jarr.put("5~CCCAGG~BTC~USD"); // aggregate BTC
+				jarr.put("5~CCCAGG~ETH~USD"); // aggregate ETH
 				JSONObject obj = new JSONObject();
 				try {
 					obj.put("subs", jarr);
@@ -56,20 +66,21 @@ public class WebSocketController {
 			@Override
 			public void call(Object... args) {
 				String message = (String) args[0];
+				System.out.println(message);
 				String mask;
 				String[] items = message.split(CryptocompareUtils.separator);
-
 				if (items[0].equals(CryptocompareUtils.acceptedType)
 						&& !items[4].equals(CryptocompareUtils.unacceptedFlag)) {
 					mask = CryptocompareUtils.hexStringToBinaryString(items[items.length - 1]);
 					if (CryptocompareUtils.validateMask(mask)) {
-						System.out.println(mask);
+
 						LiveRate newLiveRate = CryptocompareUtils.stringArrayToLiveRate(items, mask);
 						if (newLiveRate != null) {
-							liveRateRepository.save(newLiveRate).subscribe();
+							liveRateReactiveRepository.save(newLiveRate).subscribe();
 						}
 					}
 				}
+
 			}
 		}).on(Socket.EVENT_DISCONNECT, (Object... args) -> System.out.println("EVENT_DISCONNECT"));
 
@@ -80,8 +91,21 @@ public class WebSocketController {
 	 * this endpoint provides live stream reading rates from MongoDB
 	 */
 	@GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-	public Flux<LiveRate> liveStream() {
-		return liveRateRepository.findByFromCurrency("BTC").log().share();
+	public Flux<LiveRate> liveStream(@RequestParam(value = "currency", required = true) String currency) {
+		Instant instant = Instant.now();
+		long timeStampSeconds = instant.getEpochSecond();
+		log.info(Long.toString(timeStampSeconds));
+		return liveRateReactiveRepository.findByFromCurrencyAndToCurrencyAndLastUpdateGreaterThan(currency, "USD", timeStampSeconds).log().share();
 	}
+
+	/*
+	 * this endpoint provides live stream reading rates from MongoDB
+	 */
+	@GetMapping(value = "/last")
+	public Flux<LiveRate> lastRates(@RequestParam(value = "currency", required = true) String currency) {
+		
+		return liveRateReactiveRepository.findWhateverByFromCurrencyAndToCurrency(currency, "USD");
+	}
+
 
 }
