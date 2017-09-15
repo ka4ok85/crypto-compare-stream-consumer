@@ -2,6 +2,7 @@ package com.github.ka4ok85.cryptocomparestreamconsumer;
 
 import java.net.URISyntaxException;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
 
 import org.json.JSONArray;
@@ -37,6 +38,8 @@ public class WebSocketController {
 	@Autowired
 	private LiveRateReactiveRepository liveRateReactiveRepository;
 	
+	private HashMap<String, Double> previousRateMap = new HashMap<>();
+	
 	/*
 	 * this endpoint triggers consuming process rates through websocket valid
 	 * rates stored in MongoDB
@@ -66,8 +69,9 @@ public class WebSocketController {
 			@Override
 			public void call(Object... args) {
 				String message = (String) args[0];
-				System.out.println(message);
+				//System.out.println(message);
 				String mask;
+				String currency;
 				String[] items = message.split(CryptocompareUtils.separator);
 				if (items[0].equals(CryptocompareUtils.acceptedType)
 						&& !items[4].equals(CryptocompareUtils.unacceptedFlag)) {
@@ -76,12 +80,29 @@ public class WebSocketController {
 
 						LiveRate newLiveRate = CryptocompareUtils.stringArrayToLiveRate(items, mask);
 						if (newLiveRate != null) {
+							System.out.println(message);
+							
+							currency = newLiveRate.getFromCurrency();
+							if (previousRateMap.containsKey(currency) == false) {
+								previousRateMap.put(currency, 0.0);
+							}
+					
+							
+							System.out.println(previousRateMap.get(currency));
+							
+							if (previousRateMap.get(currency) < newLiveRate.getPrice()) {
+								System.out.println("ADD");
+							}
+							
+							previousRateMap.put(currency, newLiveRate.getPrice());
+							
 							liveRateReactiveRepository.save(newLiveRate).subscribe();
 						}
 					}
 				}
 
 			}
+
 		}).on(Socket.EVENT_DISCONNECT, (Object... args) -> System.out.println("EVENT_DISCONNECT"));
 
 		socket.connect();
