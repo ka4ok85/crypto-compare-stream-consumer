@@ -15,6 +15,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
+import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.github.ka4ok85.cryptocomparestreamconsumer.entity.LiveRate;
+import com.github.ka4ok85.cryptocomparestreamconsumer.entity.LiveRateLive;
 import com.github.ka4ok85.cryptocomparestreamconsumer.repository.LiveRateReactiveRepository;
 import com.github.ka4ok85.cryptocomparestreamconsumer.service.CryptocompareUtils;
 
@@ -34,12 +36,15 @@ import reactor.core.publisher.Flux;
 public class WebSocketController {
 
 	private static final Logger log = LoggerFactory.getLogger(WebSocketController.class);
-	
+
 	@Autowired
 	private LiveRateReactiveRepository liveRateReactiveRepository;
-	
-	private HashMap<String, Double> previousRateMap = new HashMap<>();
-	
+
+	@Autowired
+	private MongoTemplate mongoTemplate;
+
+	private HashMap<String, Integer> currencyCounterMap = new HashMap<>();
+
 	/*
 	 * this endpoint triggers consuming process rates through websocket valid
 	 * rates stored in MongoDB
@@ -69,7 +74,7 @@ public class WebSocketController {
 			@Override
 			public void call(Object... args) {
 				String message = (String) args[0];
-				//System.out.println(message);
+
 				String mask;
 				String currency;
 				String[] items = message.split(CryptocompareUtils.separator);
@@ -80,22 +85,21 @@ public class WebSocketController {
 
 						LiveRate newLiveRate = CryptocompareUtils.stringArrayToLiveRate(items, mask);
 						if (newLiveRate != null) {
-							System.out.println(message);
-							
+							log.debug(message);
+
 							currency = newLiveRate.getFromCurrency();
-							if (previousRateMap.containsKey(currency) == false) {
-								previousRateMap.put(currency, 0.0);
+							if (currencyCounterMap.containsKey(currency) == false) {
+								currencyCounterMap.put(currency, 0);
 							}
-					
-							
-							System.out.println(previousRateMap.get(currency));
-							
-							if (previousRateMap.get(currency) < newLiveRate.getPrice()) {
-								System.out.println("ADD");
+
+							if (currencyCounterMap.get(currency) == 10) {
+								log.debug("Save to History Collection: {}", newLiveRate.toString());
+								mongoTemplate.save(newLiveRate, "history");
+								currencyCounterMap.put(currency, 0);
+							} else {
+								currencyCounterMap.computeIfPresent(currency, (key, counter) -> counter + 1);
 							}
-							
-							previousRateMap.put(currency, newLiveRate.getPrice());
-							
+
 							liveRateReactiveRepository.save(newLiveRate).subscribe();
 						}
 					}
@@ -116,7 +120,9 @@ public class WebSocketController {
 		Instant instant = Instant.now();
 		long timeStampSeconds = instant.getEpochSecond();
 		log.info(Long.toString(timeStampSeconds));
-		return liveRateReactiveRepository.findByFromCurrencyAndToCurrencyAndLastUpdateGreaterThan(currency, "USD", timeStampSeconds).log().share();
+		return liveRateReactiveRepository
+				.findByFromCurrencyAndToCurrencyAndLastUpdateGreaterThan(currency, "USD", timeStampSeconds).log()
+				.share();
 	}
 
 	/*
@@ -124,9 +130,7 @@ public class WebSocketController {
 	 */
 	@GetMapping(value = "/last")
 	public Flux<LiveRate> lastRates(@RequestParam(value = "currency", required = true) String currency) {
-		
 		return liveRateReactiveRepository.findWhateverByFromCurrencyAndToCurrency(currency, "USD");
 	}
-
 
 }
