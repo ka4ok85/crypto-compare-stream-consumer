@@ -11,6 +11,7 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -44,6 +45,10 @@ public class WebSocketController {
 	private MongoTemplate mongoTemplate;
 
 	private HashMap<String, Integer> currencyCounterMap = new HashMap<>();
+	
+
+	@Value("${mongo.collections.history}")
+	private String historyCollection;
 
 	/*
 	 * this endpoint triggers consuming process rates through websocket valid
@@ -85,7 +90,7 @@ public class WebSocketController {
 
 						LiveRate newLiveRate = CryptocompareUtils.stringArrayToLiveRate(items, mask);
 						if (newLiveRate != null) {
-							log.debug(message);
+							log.info(message);
 
 							currency = newLiveRate.getFromCurrency();
 							if (currencyCounterMap.containsKey(currency) == false) {
@@ -93,8 +98,8 @@ public class WebSocketController {
 							}
 
 							if (currencyCounterMap.get(currency) == 10) {
-								log.debug("Save to History Collection: {}", newLiveRate.toString());
-								mongoTemplate.save(newLiveRate, "history");
+								log.info("Save to History Collection: {}", newLiveRate.toString());
+								mongoTemplate.save(newLiveRate, historyCollection);
 								currencyCounterMap.put(currency, 0);
 							} else {
 								currencyCounterMap.computeIfPresent(currency, (key, counter) -> counter + 1);
