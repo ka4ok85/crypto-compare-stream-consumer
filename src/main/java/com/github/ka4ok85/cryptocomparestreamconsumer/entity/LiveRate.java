@@ -2,7 +2,7 @@ package com.github.ka4ok85.cryptocomparestreamconsumer.entity;
 
 import org.springframework.data.mongodb.core.mapping.Document;
 
-@Document(collection = "live_rates3")
+@Document(collection = "live_rates")
 public class LiveRate {
 
 	private String exchangeName;
@@ -35,7 +35,7 @@ public class LiveRate {
 		super();
 		this.price = price;
 	}
-	
+
 	public String getExchangeName() {
 		return exchangeName;
 	}
@@ -107,7 +107,4 @@ public class LiveRate {
 				+ volume24h + ", volume24hTo=" + volume24hTo + "]";
 	}
 
-
-	
-	
 }
