@@ -17,6 +17,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -44,7 +46,6 @@ public class WebSocketController {
 	private MongoTemplate mongoTemplate;
 
 	private HashMap<String, Integer> currencyCounterMap = new HashMap<>();
-	
 
 	@Value("${mongo.collections.history}")
 	private String historyCollection;
@@ -130,11 +131,15 @@ public class WebSocketController {
 	}
 
 	/*
-	 * this endpoint provides live stream reading rates from MongoDB
+	 * this endpoint provides list of past rates from MongoDB
 	 */
 	@GetMapping(value = "/last")
-	public Flux<LiveRate> lastRates(@RequestParam(value = "currency", required = true) String currency) {
-		return liveRateReactiveRepository.findWhateverByFromCurrencyAndToCurrency(currency, "USD");
+	public List<LiveRate> lastRates(@RequestParam(value = "currency", required = true) String currency) {
+		Query query = new Query();
+		query.addCriteria(Criteria.where("fromCurrency").is(currency));
+		query.with(new Sort(Sort.Direction.ASC, "lastUpdate"));
+
+		return mongoTemplate.find(query, LiveRate.class, historyCollection);
 	}
 
 }
