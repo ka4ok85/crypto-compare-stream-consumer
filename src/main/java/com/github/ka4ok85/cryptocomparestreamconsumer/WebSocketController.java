@@ -24,7 +24,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.github.ka4ok85.cryptocomparestreamconsumer.entity.LiveRate;
-import com.github.ka4ok85.cryptocomparestreamconsumer.entity.LiveRateLive;
 import com.github.ka4ok85.cryptocomparestreamconsumer.repository.LiveRateReactiveRepository;
 import com.github.ka4ok85.cryptocomparestreamconsumer.service.CryptocompareUtils;
 
